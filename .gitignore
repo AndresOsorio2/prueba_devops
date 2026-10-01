@@ -1,0 +1,9 @@
+node_modules/
+uploads/*
+!uploads/.gitkeep
+.env
+*.env.local
+*.local
+coverage/
+.stryker-tmp/
+reports/
