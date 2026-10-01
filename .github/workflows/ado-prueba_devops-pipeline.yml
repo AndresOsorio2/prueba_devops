@@ -4,18 +4,13 @@ on:
   push:
     branches:
       - dev
-  workflow_dispatch: {}
+  workflow_dispatch:
 
 permissions:
   contents: read
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 env:
   IMAGE_NAME: deliverable-manager-backend
-  IMAGE_TAG: ${{ github.run_id }}
   ARTIFACT_DIR: artifacts
 
 jobs:
@@ -23,7 +18,7 @@ jobs:
     name: Build + Test + Docker image
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Usar Node 20.x
@@ -40,17 +35,17 @@ jobs:
 
       - name: Build imagen Docker
         run: |
-          docker build -t "${IMAGE_NAME}:${IMAGE_TAG}" .
+          docker build -t "${IMAGE_NAME}:${{ github.run_id }}" .
 
       - name: Exportar imagen a .tar.gz
         run: |
           mkdir -p "${ARTIFACT_DIR}"
-          docker save "${IMAGE_NAME}:${IMAGE_TAG}" | gzip > "${ARTIFACT_DIR}/${IMAGE_NAME}-${IMAGE_TAG}.tar.gz"
+          docker save "${IMAGE_NAME}:${{ github.run_id }}" | gzip > "${ARTIFACT_DIR}/${IMAGE_NAME}-${{ github.run_id }}.tar.gz"
 
       - name: Publicar imagen como artifact
         uses: actions/upload-artifact@v4
         with:
           name: docker-image
           path: ${{ env.ARTIFACT_DIR }}/
+          compression-level: 0
           retention-days: 7
-          if-no-files-found: error
