@@ -7,8 +7,6 @@ RUN npm ci --only=production
 
 COPY . .
 
-RUN mkdir -p /app/uploads
-
 EXPOSE 3000
 
 CMD ["node", "src/index.js"]
