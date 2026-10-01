@@ -1,0 +1,55 @@
+name: Build, test y empaquetado Docker
+
+on:
+  push:
+    branches:
+      - dev
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  IMAGE_NAME: deliverable-manager-backend
+  ARTIFACT_DIR: artifacts
+
+jobs:
+  build-and-test:
+    name: Build + Test + Docker image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Usar Node 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Correr tests (Jest)
+        run: npm test
+
+      - name: Build imagen Docker
+        run: |
+          docker build -t "${IMAGE_NAME}:${{ github.run_id }}" .
+
+      - name: Exportar imagen a .tar.gz
+        run: |
+          mkdir -p "${ARTIFACT_DIR}"
+          docker save "${IMAGE_NAME}:${{ github.run_id }}" | gzip > "${ARTIFACT_DIR}/${IMAGE_NAME}-${{ github.run_id }}.tar.gz"
+
+      - name: Publicar imagen como artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-image
+          path: artifacts/
+          compression-level: 0
+          retention-days: 7
